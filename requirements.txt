@@ -1,0 +1,8 @@
+streamlit==1.32.2
+pandas==2.2.1
+openai==1.14.3
+python-dotenv==1.0.1
+fpdf==1.7.2
+Pillow==10.2.0
+streamlit-drawable-canvas==0.9.3
+langchain==0.1.14
