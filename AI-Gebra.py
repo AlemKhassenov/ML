@@ -74,7 +74,7 @@ def password_change_form():
 
 # --- АВТОРИЗАЦИЯ ---
 if not st.session_state.authenticated:
-    st.title("🔐 Вход или регистрация")
+    st.title("🧠 AI-Gebra — твой ИИ ассистент")
     auth_tab, reg_tab = st.tabs(["Войти", "Регистрация"])
 
     with auth_tab:
@@ -90,6 +90,15 @@ if not st.session_state.authenticated:
                     st.session_state.authenticated = True
                     st.session_state.username = username
                     st.session_state.role = role
+                    # Очистка старых данных при входе
+                    for key in ["generated_problem", "success_criteria", "mark_scheme_text", "total_points"]:
+                        if key in st.session_state:
+                            del st.session_state[key]
+                    # 🧽 Сброс холста рисования (для всех режимов, если хочешь — можно добавить остальные)
+                    for mode in ["freedraw", "line", "rect", "circle", "transform"]:
+                        canvas_key = f"canvas_{mode}"
+                        if canvas_key in st.session_state:
+                            del st.session_state[canvas_key]
                     st.stop()
             else:
                 st.error("Неверный логин или пароль")
@@ -137,7 +146,7 @@ else:
     st.markdown("## 🎲 Выбери тему и получи задание")
 
     unit = st.selectbox("Раздел", [
-        "Интегралы", "Производные", "Прямоугольная система координат на плоскости"
+        "Интегралы", "Производные", "Прямоугольная система координат на плоскости", "Прямоугольная система координат в пространстве"
 ])
 
     topic = st.selectbox("Тема", {
@@ -154,8 +163,22 @@ else:
         "Прямоугольная система координат на плоскости": [
             "Расстояние между точками",
             "Нахождение координат середины",
-            "Деление отрезка в заданном соотношении"
+            "Деление отрезка в заданном соотношении",
+            "Уравнение окружности",
+            "Уравнение прямой",
+            "Параллельность прямых",
+            "Перпендикулярность прямых"
+        ],
+        "Прямоугольная система координат в пространстве": [
+            "Координаты вектора",
+            "Длина вектора",
+            "Операции с векторами",
+            "Уравнение сферы",
+            "Уравнение прямой",
+            "Уравнение плоскости",
+            "Свойства ветокров"
         ]
+
     }[unit])
 #кнопка генерации задачи по выбранным разделам 
     
@@ -211,8 +234,8 @@ else:
 🔴 Важно:
 - Не используй скобки ( ... ) в формулах — только $$...$$
 - Следуй структуре:
-  1. <действие> — N баллов  
-  2. <...> — N баллов  
+  1. <действие> 
+  2. <...> 
   ...
   **Итого: X баллов**
 
@@ -220,11 +243,13 @@ else:
 **Условие задачи:**  
 Найди интеграл функции $$x e^x$$
 
+
 **Критерии успеха:**  
-1. Определить метод решения  1 балл
-2. Разложить задачу на этапы  2 балла
-3. Последовательно выполнить вычисления 1 балл  
-4. Привести ответ к удобной форме 1 балл
+1. Определить метод решения  
+2. Разложить задачу на этапы  
+3. Последовательно выполнить вычисления   
+4. Привести ответ к удобной форме 
+**Итого: 5 баллов**
 
 **Марк-схема:**  
 1. Применить метод интегрирования по частям — 2 балла  
@@ -296,27 +321,51 @@ else:
         st.markdown("### ✏️ Запиши свое решение:")
 
         # Настройки рисования
-        col1, col2, = st.columns(2)
-        col3, = st.columns(1)
-        with col1:
-            drawing_mode = st.selectbox("🛠 Режим рисования", [
-                "freedraw", "line", "rect", "circle", "transform"
-            ], key="drawing_mode_select")
+        #col1, col2, = st.columns(2)
+        #col3, col4 = st.columns(2)
+        #with col1:
+         #   drawing_mode = st.selectbox("🛠 Режим рисования", [
+          #      "freedraw", "line", "rect", "circle", "transform"
+           # ], key="drawing_mode_select")
 
-        with col2:
-            stroke_color = st.color_picker("🎨 Цвет пера", "#000000", key="stroke_color_picker")
+        #with col2:
+         #   use_eraser = st.checkbox("🧼 Включить ластик", key="eraser_toggle")
 
-        with col3:
-            stroke_width = st.slider("✏️ Толщина", 1, 20, 4, key="stroke_width_slider")
+        #with col3:
+         #   if use_eraser:
+          #      eraser_width = st.slider("🧽 Толщина ластика", 1, 50, key="eraser_width_slider")
+           # else:
+            #    stroke_width = st.slider("✏️ Толщина пера", 1, 20, key="stroke_width_slider")
+        
+        #with col4:
+         #   stroke_color = st.color_picker("🎨 Цвет пера", "#000000", key="stroke_color_picker")
 
-        eraser_mode = st.checkbox("🧼 Ластик", key="eraser_checkbox")
-        actual_color = "#FFFFFF" if eraser_mode else stroke_color
 
-        canvas_key = f"canvas_{drawing_mode}"   
+        #actual_color = "#FFFFFF" if use_eraser else stroke_color
+        #actual_width = eraser_width if use_eraser else stroke_width
+        # 🎨 Настройки пера и ластика
+        use_eraser = st.checkbox("🧼 Включить ластик", key="eraser_toggle")
+
+        drawing_mode = st.selectbox("🛠 Режим рисования", [
+            "freedraw", "line", "rect", "circle", "transform"
+        ], key="drawing_mode_select")
+
+        stroke_color = st.color_picker("🎨 Цвет пера", "#000000", key="stroke_color_picker")
+
+        if use_eraser:
+            eraser_width = st.slider("🧽 Толщина ластика", 1, 50, 20, key="eraser_width_slider")
+            actual_width = eraser_width
+            actual_color = "#FFFFFF"
+        else:
+            stroke_width = st.slider("✏️ Толщина пера", 1, 20, 4, key="stroke_width_slider")
+            actual_width = stroke_width
+            actual_color = stroke_color
+
+        canvas_key = "canvas_drawing"
 
         canvas_result = st_canvas(
             fill_color="rgba(255, 255, 255, 1)",
-            stroke_width=stroke_width,
+            stroke_width=actual_width,
             stroke_color=actual_color,
             background_color="#FFFFFF",
             height=1000,
@@ -455,7 +504,7 @@ else:
                     df_history = df_entry
 
                 df_history.to_csv(history_path, index=False)
-                st.markdown("### 🔍 Ответ от GPT:")
+                st.markdown("### 🔍 Ответ:")
                 for block in result.split("\n\n"):
                     if "$$" in block:
                         st.markdown(block, unsafe_allow_html=True) # чтобы нормально формулы показывал
@@ -521,7 +570,7 @@ else:
             for i, row in df.iterrows():
                 pdf.ln(10)
                 pdf.multi_cell(0, 10, f"📘 Задача: {row['task']}")
-                pdf.multi_cell(0, 10, f"🧠 Ответ GPT:\n{row['gpt_response']}")
+                pdf.multi_cell(0, 10, f"🧠 Ответ:\n{row['gpt_response']}")
                 if 'error_type' in row:
                     pdf.cell(0, 10, f"Тип ошибки: {row['error_type']}", ln=True)
                 pdf.cell(0, 10, f"🕓 Время: {row['timestamp']}", ln=True)
